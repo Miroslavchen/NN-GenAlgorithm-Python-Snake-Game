@@ -8,23 +8,23 @@ import algelitism
 from neuralnetwork import NNetwork
 from Game.Snake import game
 
-# Налаштування гри
+# Настройки игры
 insquere = 5
 env = game(render_mode="rgb_array", squere=insquere)
 
-# Налаштування нейронної мережі
-NEURONS_IN_LAYERS = [insquere**2, 24, 6, 4]
+# Настройки нейронной сети
+NEURONS_IN_LAYERS = [insquere**2, 24, 6, 3, 2, 8, 64, 4] 
 network = NNetwork(*NEURONS_IN_LAYERS)
 
 LENGTH_CHROM = NNetwork.getTotalWeights(*NEURONS_IN_LAYERS)
-LOW, UP, ETA = -1.0, 1.0, 90
+LOW, UP, ETA = -1.0, 1.0, 2
 
-# Налаштування генетичного алгоритму
+# Настройки генетического алгоритма
 POPULATION_SIZE = 200
 P_CROSSOVER = 0.8
-P_MUTATION = 0.65  # Збільшення ймовірності мутації для більшої різноманітності
-MAX_GENERATIONS = 150  # Збільшення кількості поколінь для кращого навчання
-HALL_OF_FAME_SIZE = 30  # Збільшення розміру зали слави
+P_MUTATION = 0.3  # Увеличение вероятности мутации для большего разнообразия
+MAX_GENERATIONS = 300  # Увеличение количества поколений для лучшего обучения
+HALL_OF_FAME_SIZE = 2  # Увеличение размера зала славы
 
 hof = tools.HallOfFame(HALL_OF_FAME_SIZE)
 RANDOM_SEED = 42
@@ -41,14 +41,14 @@ toolbox.register("populationCreator", tools.initRepeat, list, toolbox.individual
 population = toolbox.populationCreator(n=POPULATION_SIZE)
 
 def getScore(individual):
-    """Обчислює загальну винагороду для даної особини (хромосоми)."""
+    """Вычисляет общую награду для данного индивида (хромосомы)."""
     network.set_weights(individual)
     observation = env.reset()
     action_counter = 0
     total_reward = 0
     done = False
 
-    distance = lambda a, b: np.sqrt(np.sum((np.array(a) - np.array(b))**2))  # Конвертація списків в масиви
+    distance = lambda a, b: np.sqrt(np.sum((np.array(a) - np.array(b))**2))  # Преобразование списков в массивы
     prev_dist = distance(env.snake_pos, env.food_pos)
     
     while not done and action_counter < 200:
@@ -59,7 +59,7 @@ def getScore(individual):
         
         current_dist = distance(env.snake_pos, env.food_pos)
         if current_dist < prev_dist:
-            reward += 0.00001  # Заохочення за наближення до їжі
+            reward += 0.00001  # Поощрение за приближение к пище
         prev_dist = current_dist
         
         total_reward += reward
@@ -75,7 +75,7 @@ stats = tools.Statistics(lambda ind: ind.fitness.values)
 stats.register("max", np.max)
 stats.register("avg", np.mean)
 
-# Запуск генетичного алгоритму з елементом елітизму
+# Запуск генетического алгоритма с элементом элитизма
 population, logbook = algelitism.eaSimpleElitism(
     population, toolbox,
     cxpb=P_CROSSOVER,
@@ -88,15 +88,15 @@ population, logbook = algelitism.eaSimpleElitism(
 
 max_fitness_values, mean_fitness_values = logbook.select("max", "avg")
 
-# Візуалізація результатів
+# Визуализация результатов
 plt.plot(max_fitness_values, color='red')
 plt.plot(mean_fitness_values, color='green')
-plt.xlabel('Покоління')
-plt.ylabel('Макс/середня пристосованість')
-plt.title('Залежність максимального та середнього пристосування від покоління')
+plt.xlabel('Поколение')
+plt.ylabel('Макс/средняя приспособленность')
+plt.title('Зависимость максимальной и средней приспособленности от поколения')
 plt.show()
 
-# Використання найкращої знайденої хромосоми для гри
+# Использование лучшей найденной хромосомы для игры
 hromo = hof.items[0]
 print(hromo)
 network.set_weights(hromo)
@@ -106,7 +106,7 @@ observation = env.reset()
 action = int(np.argmax(network.predict(observation)))
 count = 1
 
-# Запуск гри
+# Запуск игры
 while True:
     while True:
         observation, reward, done = env.step(action, difficulty=6)
@@ -115,5 +115,5 @@ while True:
         time.sleep(0.03)
         action = int(np.argmax(network.predict(observation)))
     env.reset()
-    print("Ітерація:", count)
+    print("Итерация:", count)
     count += 1
